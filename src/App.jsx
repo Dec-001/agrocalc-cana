@@ -43,195 +43,138 @@ const ResultCard = ({ label, value, unit, colorClass = "text-green-400" }) => (
   </div>
 );
 
+const TabButton = ({ tabId, children, icon, activeTab, setActiveTab }) => (
+  <button
+    onClick={() => setActiveTab(tabId)}
+    className={`flex-1 flex flex-col items-center justify-center p-3 transition-colors duration-200 focus:outline-none ${
+      activeTab.startsWith(tabId.split("_")[0]) ? "text-yellow-400 border-t-4 border-yellow-400" : "text-gray-400"
+    }`}
+  >
+    {icon}
+    <span className="text-xs mt-1">{children}</span>
+  </button>
+);
+
 export default function App() {
   const [activeTab, setActiveTab] = useState("estimar_alq");
-
-  // Estados da estimativa
   const [comprimentoRua, setComprimentoRua] = useState("320");
   const [producaoAmostra, setProducaoAmostra] = useState("12");
   const [ruasAmostra, setRuasAmostra] = useState("10");
   const [areaTalhaoAlq, setAreaTalhaoAlq] = useState("8.66");
   const [areaTalhaoHa, setAreaTalhaoHa] = useState("20.96");
   const [pesoGaiolao, setPesoGaiolao] = useState("75");
-
-  // Estados da gestão
   const [areaTotalGleba, setAreaTotalGleba] = useState("7.57");
   const [areaRestanteColher, setAreaRestanteColher] = useState("3.97");
   const [cargasRealizadas, setCargasRealizadas] = useState("8");
-
-  // Estados do conversor
   const [alqParaHa, setAlqParaHa] = useState("1");
   const [haParaAlq, setHaParaAlq] = useState("2.42");
+  const [resultados, setResultados] = useState({});
 
-  // Constantes
   const ALQ_PARA_HA = 2.42;
   const ALQUEIRE_M2 = 24200;
-
-  // Resultados
-  const [resultados, setResultados] = useState({});
 
   useEffect(() => {
     const numComprimentoRua = parseFloat(comprimentoRua) || 0;
     const numProducaoAmostra = parseFloat(producaoAmostra) || 0;
     const numRuasAmostra = parseFloat(ruasAmostra) || 0;
     const numPesoGaiolao = parseFloat(pesoGaiolao) || 0;
-
     const numAreaTotalGleba = parseFloat(areaTotalGleba) || 0;
     const numAreaRestanteColher = parseFloat(areaRestanteColher) || 0;
     const numCargasRealizadas = parseFloat(cargasRealizadas) || 0;
-
-    // Estimativa
     const espacamentoFixo = 1.5;
     const producaoPorRua = numRuasAmostra > 0 ? numProducaoAmostra / numRuasAmostra : 0;
     const ruasPorAlqueire = numComprimentoRua > 0 ? ALQUEIRE_M2 / (numComprimentoRua * espacamentoFixo) : 0;
     const produtividadeEstimadaTonAlq = ruasPorAlqueire * producaoPorRua;
     const produtividadeEstimadaTonHa = produtividadeEstimadaTonAlq / ALQ_PARA_HA;
-    const areaEstimadaEmAlqueires = activeTab.includes("alq")
-      ? (parseFloat(areaTalhaoAlq) || 0)
-      : (parseFloat(areaTalhaoHa) || 0) / ALQ_PARA_HA;
+    const areaEstimadaEmAlqueires = activeTab.includes("alq") ? (parseFloat(areaTalhaoAlq) || 0) : (parseFloat(areaTalhaoHa) || 0) / ALQ_PARA_HA;
     const producaoTotalEstimada = areaEstimadaEmAlqueires * produtividadeEstimadaTonAlq;
     const totalViagensEstimadas = numPesoGaiolao > 0 ? producaoTotalEstimada / numPesoGaiolao : 0;
-
-    // Gestão
     const totalColhidoTon = numCargasRealizadas * numPesoGaiolao;
-    const areaJaColhidaAlq =
-      numAreaTotalGleba > numAreaRestanteColher ? numAreaTotalGleba - numAreaRestanteColher : 0;
-    const produtividadeRealTonAlq =
-      areaJaColhidaAlq > 0 ? totalColhidoTon / areaJaColhidaAlq : 0;
+    const areaJaColhidaAlq = numAreaTotalGleba > numAreaRestanteColher ? numAreaTotalGleba - numAreaRestanteColher : 0;
+    const produtividadeRealTonAlq = areaJaColhidaAlq > 0 ? totalColhidoTon / areaJaColhidaAlq : 0;
     const produtividadeRealTonHa = produtividadeRealTonAlq / ALQ_PARA_HA;
-    const mediaViagensPorAlqueire =
-      areaJaColhidaAlq > 0 ? numCargasRealizadas / areaJaColhidaAlq : 0;
+    const mediaViagensPorAlqueire = areaJaColhidaAlq > 0 ? numCargasRealizadas / areaJaColhidaAlq : 0;
     const estimativaRestanteTon = numAreaRestanteColher * produtividadeRealTonAlq;
     const estimativaViagensRestantes = numPesoGaiolao > 0 ? estimativaRestanteTon / numPesoGaiolao : 0;
-
-    setResultados({
-      produtividadeEstimadaTonAlq,
-      produtividadeEstimadaTonHa,
-      producaoTotalEstimada,
-      totalViagensEstimadas,
-      totalColhidoTon,
-      areaJaColhidaAlq,
-      produtividadeRealTonAlq,
-      produtividadeRealTonHa,
-      mediaViagensPorAlqueire,
-      estimativaViagensRestantes,
-      estimativaRestanteTon,
-    });
+    setResultados({ produtividadeEstimadaTonAlq, produtividadeEstimadaTonHa, producaoTotalEstimada, totalViagensEstimadas, totalColhidoTon, areaJaColhidaAlq, produtividadeRealTonAlq, produtividadeRealTonHa, mediaViagensPorAlqueire, estimativaViagensRestantes, estimativaRestanteTon });
   }, [comprimentoRua, producaoAmostra, ruasAmostra, areaTalhaoAlq, areaTalhaoHa, pesoGaiolao, areaTotalGleba, areaRestanteColher, cargasRealizadas, activeTab]);
 
-  const handleAlqueireEstimateChange = (value) => {
-    setAreaTalhaoAlq(value);
-    setAreaTalhaoHa(((parseFloat(value) || 0) * ALQ_PARA_HA).toFixed(2));
-  };
-  const handleHectareEstimateChange = (value) => {
-    setAreaTalhaoHa(value);
-    setAreaTalhaoAlq(((parseFloat(value) || 0) / ALQ_PARA_HA).toFixed(2));
-  };
+  const handleAlqueireEstimateChange = (value) => { setAreaTalhaoAlq(value); setAreaTalhaoHa(((parseFloat(value) || 0) * ALQ_PARA_HA).toFixed(2)); };
+  const handleHectareEstimateChange = (value) => { setAreaTalhaoHa(value); setAreaTalhaoAlq(((parseFloat(value) || 0) / ALQ_PARA_HA).toFixed(2)); };
+  const handleAlqConverter = (value) => { setAlqParaHa(value); setHaParaAlq(((parseFloat(value) || 0) * ALQ_PARA_HA).toFixed(4)); };
+  const handleHaConverter = (value) => { setHaParaAlq(value); setAlqParaHa(((parseFloat(value) || 0) / ALQ_PARA_HA).toFixed(4)); };
 
-  const handleAlqConverter = (value) => {
-    setAlqParaHa(value);
-  const handleHaConverter = (value) => {
-    setHaParaAlq(value);
-    setAlqParaHa(((parseFloat(value) || 0) / ALQ_PARA_HA).toFixed(4));
-  };
-
-  const TabButton = ({ tabId, children, icon }) => (
-    <button
-      onClick={() => setActiveTab(tabId)}
-      className={`flex-1 flex flex-col items-center justify-center p-3 transition-colors duration-200 focus:outline-none ${
-        activeTab.startsWith(tabId.split("_")[0]) ? "text-yellow-400 border-t-4 border-yellow-400" : "text-gray-400"
-      }`}
-    >
-      {icon}
-      <span className="text-xs mt-1">{children}</span>
-    </button>
+  const renderEstimativa = () => (
+    <div className="space-y-4">
+      <InputField label="Comprimento da Rua (metros)" value={comprimentoRua} onChange={setComprimentoRua} unit="m" />
+      <InputField label="Produção da Amostra (toneladas)" value={producaoAmostra} onChange={setProducaoAmostra} unit="ton" />
+      <InputField label="Número de Ruas da Amostra" value={ruasAmostra} onChange={setRuasAmostra} unit="ruas" />
+      <InputField label="Peso médio por Carga (gaiolão)" value={pesoGaiolao} onChange={setPesoGaiolao} unit="ton" />
+      <div className="flex items-center space-x-2">
+        <div className="flex-1"><InputField label="Área do Talhão (Alqueires)" value={areaTalhaoAlq} onChange={handleAlqueireEstimateChange} unit="alq" /></div>
+        <div className="flex-1"><InputField label="Área do Talhão (Hectares)" value={areaTalhaoHa} onChange={handleHectareEstimateChange} unit="ha" /></div>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
+        <ResultCard label="Produtividade Estimada (ton/alq)" value={resultados.produtividadeEstimadaTonAlq} unit="ton/alq" />
+        <ResultCard label="Produtividade Estimada (ton/ha)" value={resultados.produtividadeEstimadaTonHa} unit="ton/ha" />
+        <ResultCard label="Produção Total Estimada" value={resultados.producaoTotalEstimada} unit="ton" colorClass="text-yellow-400" />
+        <ResultCard label="Total de Viagens Estimadas" value={resultados.totalViagensEstimadas} unit="cargas" colorClass="text-yellow-400" />
+      </div>
+    </div>
   );
 
-  const EstimativaView = ({ unitType }) => {
-    const isAlqueire = unitType === "alq";
-    const areaValue = isAlqueire ? areaTalhaoAlq : areaTalhaoHa;
-    const handleAreaChange = isAlqueire ? handleAlqueireEstimateChange : handleHectareEstimateChange;
-    const unitLabel = isAlqueire ? "alq" : "ha";
-
-    return (
-      <div className="space-y-5">
-        <div className="bg-gray-700 p-4 rounded-lg">
-          <h2 className="font-semibold mb-3">Dados da Amostra</h2>
-          <div className="space-y-4">
-            <InputField label="Comprimento de 1 rua de cana" value={comprimentoRua} onChange={setComprimentoRua} unit="metros" />
-            <InputField label="Produção em Toneladas (da amostra)" value={producaoAmostra} onChange={setProducaoAmostra} unit="ton" />
-            <InputField label="Para cada nº de ruas" value={ruasAmostra} onChange={setRuasAmostra} unit="ruas" />
-          </div>
-        </div>
-        <div className="bg-gray-700 p-4 rounded-lg">
-          <h2 className="font-semibold mb-3">Dados Gerais</h2>
-          <div className="space-y-4">
-            <InputField label={`Área total do talhão (${unitLabel})`} value={areaValue} onChange={handleAreaChange} unit={unitLabel} />
-            <InputField label="Peso do Gaiolão" value={pesoGaiolao} onChange={setPesoGaiolao} unit="ton" />
-          </div>
-        </div>
-        <h2 className="font-semibold text-lg text-center mt-6">Resultados da Estimativa</h2>
-        <ResultCard label="Produção Média" value={resultados.produtividadeEstimadaTonAlq} unit="ton/alq" colorClass="text-yellow-400" />
-        <ResultCard label="Produção Média (Hectare)" value={resultados.produtividadeEstimadaTonHa} unit="ton/ha" colorClass="text-yellow-400" />
-        <ResultCard label="Produção Total Estimada" value={resultados.producaoTotalEstimada} unit="toneladas" />
-        <ResultCard label="Total de Viagens Estimadas" value={resultados.totalViagensEstimadas} unit="gaiolões" />
+  const renderGestao = () => (
+    <div className="space-y-4">
+      <InputField label="Área Total da Gleba (Alqueires)" value={areaTotalGleba} onChange={setAreaTotalGleba} unit="alq" />
+      <InputField label="Área Restante a Colher (Alqueires)" value={areaRestanteColher} onChange={setAreaRestanteColher} unit="alq" />
+      <InputField label="Nº de Cargas Realizadas" value={cargasRealizadas} onChange={setCargasRealizadas} unit="cargas" />
+      <InputField label="Peso médio por Carga (gaiolão)" value={pesoGaiolao} onChange={setPesoGaiolao} unit="ton" />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
+        <ResultCard label="Total já Colhido" value={resultados.totalColhidoTon} unit="ton" />
+        <ResultCard label="Área já Colhida" value={resultados.areaJaColhidaAlq} unit="alq" />
+        <ResultCard label="Produtividade Real (ton/alq)" value={resultados.produtividadeRealTonAlq} unit="ton/alq" />
+        <ResultCard label="Produtividade Real (ton/ha)" value={resultados.produtividadeRealTonHa} unit="ton/ha" />
+        <ResultCard label="Média de Viagens por Alqueire" value={resultados.mediaViagensPorAlqueire} unit="cargas/alq" />
+        <ResultCard label="Estimativa Restante" value={resultados.estimativaRestanteTon} unit="ton" colorClass="text-yellow-400" />
+        <ResultCard label="Viagens Restantes" value={resultados.estimativaViagensRestantes} unit="cargas" colorClass="text-yellow-400" />
       </div>
-    );
-  };
+    </div>
+  );
+
+  const renderConversor = () => (
+    <div className="space-y-4">
+      <InputField label="Alqueires para Hectares" value={alqParaHa} onChange={handleAlqConverter} unit="alq" />
+      <InputField label="Hectares para Alqueires" value={haParaAlq} onChange={handleHaConverter} unit="ha" />
+    </div>
+  );
 
   return (
     <div className="bg-gray-800 text-white min-h-screen font-sans">
-      <div className="max-w-md mx-auto pb-24">
-        <header className="p-6 text-center">
-          <h1 className="text-4xl font-bold">AgroCalc Cana</h1>
-          <p className="text-gray-400 mt-1">Produtividade e logística da sua safra</p>
+      <div className="container mx-auto p-4 max-w-2xl">
+        <header className="text-center mb-6">
+          <h1 className="text-4xl font-bold text-yellow-500">AgroCalc Cana</h1>
+          <p className="text-gray-400">Sua calculadora para estimativa e gestão de colheita</p>
         </header>
-
-        <main className="px-4">
-          <div className={activeTab.startsWith("estimar") ? "block" : "hidden"}>
-            {activeTab === "estimar_alq" ? <EstimativaView unitType="alq" /> : <EstimativaView unitType="ha" />}
-          </div>
-
-          <div className={activeTab === "gestao" ? "block" : "hidden"}>
-            <div className="space-y-5">
-              <div className="bg-gray-700 p-4 rounded-lg">
-                <h2 className="font-semibold mb-3">Dados da Gleba</h2>
-                <div className="space-y-4">
-                  <InputField label="Área Total da Gleba" value={areaTotalGleba} onChange={setAreaTotalGleba} unit="alq" />
-                  <InputField label="Área Restante para Colher" value={areaRestanteColher} onChange={setAreaRestanteColher} unit="alq" />
-                  <InputField label="Total de Viagens/Cargas Realizadas" value={cargasRealizadas} onChange={setCargasRealizadas} unit="viagens" />
-                  <InputField label="Peso do Gaiolão (ou Carga Média)" value={pesoGaiolao} onChange={setPesoGaiolao} unit="ton" />
-                </div>
-              </div>
-              <h2 className="font-semibold text-lg text-center mt-6">Resultados da Gestão</h2>
-              <ResultCard label="Produção Média Real" value={resultados.produtividadeRealTonAlq} unit="ton/alq" colorClass="text-yellow-400" />
-              <ResultCard label="Produção Média Real (Hectare)" value={resultados.produtividadeRealTonHa} unit="ton/ha" colorClass="text-yellow-400" />
-              <ResultCard label="Área Já Colhida" value={resultados.areaJaColhidaAlq} unit="alq" />
-              <ResultCard label="Média de Viagens por Alqueire" value={resultados.mediaViagensPorAlqueire} unit="viagens/alq" />
-              <ResultCard label="Estimativa de Viagens Restantes" value={resultados.estimativaViagensRestantes} unit="gaiolões" colorClass="text-red-400" />
-              <ResultCard label="Estimativa de Toneladas Restantes" value={resultados.estimativaRestanteTon} unit="ton" colorClass="text-red-400" />
-            </div>
-          </div>
-
-          <div className={activeTab === "converter" ? "block" : "hidden"}>
-            <div className="bg-gray-700 p-6 rounded-lg space-y-6">
-              <h2 className="text-xl font-bold text-center">Conversor de Medidas</h2>
-              <div>
-                <InputField label="Alqueires (paulista)" value={alqParaHa} onChange={handleAlqConverter} unit="alq" />
-                <div className="text-center text-2xl my-4">↓↑</div>
-                <InputField label="Hectares" value={haParaAlq} onChange={handleHaConverter} unit="ha" />
-              </div>
+        
+        <main>
+          <div className="bg-gray-900 rounded-lg shadow-xl">
+            <nav className="flex border-b border-gray-700">
+              <TabButton tabId="estimar_alq" activeTab={activeTab} setActiveTab={setActiveTab} icon={<EstimateIcon />}>Estimar</TabButton>
+              <TabButton tabId="gestao_alq" activeTab={activeTab} setActiveTab={setActiveTab} icon={<HarvestIcon />}>Gerir Colheita</TabButton>
+              <TabButton tabId="converter" activeTab={activeTab} setActiveTab={setActiveTab} icon={<ConvertIcon />}>Converter</TabButton>
+            </nav>
+            <div className="p-6">
+              {activeTab.startsWith("estimar") && renderEstimativa()}
+              {activeTab.startsWith("gestao") && renderGestao()}
+              {activeTab.startsWith("converter") && renderConversor()}
             </div>
           </div>
         </main>
-      </div>
 
-      <nav className="fixed bottom-0 left-0 right-0 bg-gray-900 border-t border-gray-700 max-w-md mx-auto flex">
-        <TabButton tabId="estimar_alq" icon={<EstimateIcon />}>Estimar (Alq)</TabButton>
-        <TabButton tabId="estimar_ha" icon={<EstimateIcon />}>Estimar (Ha)</TabButton>
-        <TabButton tabId="gestao" icon={<HarvestIcon />}>Gestão</TabButton>
-        <TabButton tabId="converter" icon={<ConvertIcon />}>Converter</TabButton>
-      </nav>
+        <footer className="text-center text-gray-500 text-xs mt-8 pb-4">
+          <p>&copy; 2025 - Desenvolvido para facilitar o trabalho no campo.</p>
+        </footer>
+      </div>
     </div>
   );
 }
